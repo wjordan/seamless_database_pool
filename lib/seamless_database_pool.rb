@@ -101,7 +101,7 @@ module SeamlessDatabasePool
           connection_type[pool_connection] = connection
         end
         return connection
-      elsif connection_type == :random
+      elsif connection_type == :random || pool_connection.master_suppressed?
         return pool_connection.random_read_connection
       else
         return pool_connection.master_connection
