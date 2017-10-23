@@ -11,7 +11,12 @@ describe "SeamlessDatabasePool" do
   end
   
   it "should use the master connection by default" do
-    connection = double(:connection, :master_connection => :master_db_connection, :using_master_connection? => false)
+    connection = double(
+      :connection,
+      master_connection: :master_db_connection,
+      using_master_connection?: false,
+      master_suppressed?: false
+    )
     SeamlessDatabasePool.read_only_connection_type.should == :master
     SeamlessDatabasePool.read_only_connection(connection).should == :master_db_connection
   end
@@ -45,7 +50,10 @@ describe "SeamlessDatabasePool" do
   
   it "should be able to set using the master connection" do
     connection = double(:connection, :master_connection => :master_db_connection)
-    connection.stub(:using_master_connection? => false)
+    connection.stub(
+      using_master_connection?:false,
+      master_suppressed?: false
+    )
     SeamlessDatabasePool.use_master_connection
     SeamlessDatabasePool.read_only_connection(connection).should == :master_db_connection
   end
@@ -53,7 +61,10 @@ describe "SeamlessDatabasePool" do
   it "should be able to use persistent read connections within a block" do
     connection = double(:connection, :master_connection => :master_db_connection)
     connection.should_receive(:random_read_connection).once.and_return(:read_db_connection)
-    connection.stub(:using_master_connection? => false)
+    connection.stub(
+      using_master_connection?: false,
+      master_suppressed?: false
+    )
     SeamlessDatabasePool.read_only_connection(connection).should == :master_db_connection
     SeamlessDatabasePool.use_persistent_read_connection do
       SeamlessDatabasePool.read_only_connection(connection).should == :read_db_connection
@@ -66,7 +77,7 @@ describe "SeamlessDatabasePool" do
   it "should be able to use random read connections within a block" do
     connection = double(:connection, :master_connection => :master_db_connection)
     connection.should_receive(:random_read_connection).and_return(:read_db_connection_1, :read_db_connection_2)
-    connection.stub(:using_master_connection? => false)
+    connection.stub(using_master_connection?: false, master_suppressed?: false)
     SeamlessDatabasePool.read_only_connection(connection).should == :master_db_connection
     SeamlessDatabasePool.use_random_read_connection do
       SeamlessDatabasePool.read_only_connection(connection).should == :read_db_connection_1
@@ -79,7 +90,7 @@ describe "SeamlessDatabasePool" do
   it "should be able to use the master connection within a block" do
     connection = double(:connection, :master_connection => :master_db_connection)
     connection.should_receive(:random_read_connection).once.and_return(:read_db_connection)
-    connection.stub(:using_master_connection? => false)
+    connection.stub(using_master_connection?: false, master_suppressed?: false)
     SeamlessDatabasePool.use_persistent_read_connection
     SeamlessDatabasePool.read_only_connection(connection).should == :read_db_connection
     SeamlessDatabasePool.use_master_connection do
@@ -93,7 +104,7 @@ describe "SeamlessDatabasePool" do
   it "should be able to use connection blocks within connection blocks" do
     connection = double(:connection, :master_connection => :master_db_connection)
     connection.stub(:random_read_connection => :read_db_connection)
-    connection.stub(:using_master_connection? => false)
+    connection.stub(using_master_connection?: false, master_suppressed?: false)
     SeamlessDatabasePool.use_persistent_read_connection do
       SeamlessDatabasePool.read_only_connection(connection).should == :read_db_connection
       SeamlessDatabasePool.use_master_connection do
@@ -109,7 +120,9 @@ describe "SeamlessDatabasePool" do
   
   it "should be able to change the persistent connection" do
     connection = double(:connection)
-    connection.stub(:random_read_connection => :read_db_connection, :using_master_connection? => false)
+    connection.stub(random_read_connection: :read_db_connection,
+      using_master_connection?: false,
+      master_suppressed?: false)
     
     SeamlessDatabasePool.use_persistent_read_connection
     SeamlessDatabasePool.read_only_connection_type.should == :persistent

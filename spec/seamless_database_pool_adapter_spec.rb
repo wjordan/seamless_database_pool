@@ -270,8 +270,9 @@ describe "SeamlessDatabasePoolAdapter" do
     end
   
     it "should try to reconnect dead connections when they become available again" do
-      master_connection.stub(:select).and_raise("SQL ERROR")      # Rails 3, 4
-      master_connection.stub(:select_rows).and_raise("SQL ERROR") # Rails 5
+      master_connection.stub(:select_value).and_raise("SQL ERROR")
+      read_connection_1.stub(:select_value).and_raise("SQL ERROR")
+      read_connection_2.stub(:select_value).and_raise("SQL ERROR")
       expect(master_connection).to receive(:active?).and_return(false, false, true)
       expect(master_connection).to receive(:reconnect!)
       now = Time.now
