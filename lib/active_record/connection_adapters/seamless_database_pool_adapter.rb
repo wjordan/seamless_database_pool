@@ -236,7 +236,7 @@ module ActiveRecord
 
       def verify!(*ignored)
         if SeamlessDatabasePool.read_only_connection_type == :master
-          current_read_connection.verify!(*ignored)
+          proxy_connection_method(current_read_connection, :verify!, :read, *ignored)
         else
           do_to_connections {|conn| conn.verify!(*ignored)}
         end
