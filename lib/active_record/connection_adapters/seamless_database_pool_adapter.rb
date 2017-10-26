@@ -79,6 +79,9 @@ module ActiveRecord
 
       attr_reader :read_connections, :master_connection
 
+      # Fallback extension disabled by default.
+      mattr_accessor(:fallback_enabled) { false }
+
       class << self
         # Create an anonymous class that extends this one and proxies methods to the pool connections.
         def adapter_class(master_connection)
@@ -353,7 +356,9 @@ module ActiveRecord
 
       # Temporarily remove a connection from the read pool.
       def suppress_read_connection(conn, expire)
-        @suppress_master_until = 10.seconds.from_now if conn == @master_connection
+        if fallback_enabled? && conn == @master_connection
+          @suppress_master_until = 10.seconds.from_now
+        end
         available = available_read_connections
         connections = available.reject{|c| c == conn}
 
@@ -371,8 +376,15 @@ module ActiveRecord
         end
       end
 
+      def fallback_enabled?
+        fallback = fallback_enabled
+        fallback.is_a?(Proc) ?
+          instance_exec(&fallback) :
+          fallback
+      end
+
       def master_suppressed?
-        @suppress_master_until && @suppress_master_until > Time.now
+        fallback_enabled? && @suppress_master_until && @suppress_master_until > Time.now
       end
 
       private
